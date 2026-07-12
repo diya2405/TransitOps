@@ -1,10 +1,8 @@
 -- TransitOps schema — plain Postgres, no Supabase-specific extensions.
 -- Run once against your shared Postgres instance:
---   psql -U postgres -d transitops -f db/schema.sql
+--   psql -U postgres -d transitops -f db/schema.sql diya: password
 -- or via docker-compose (see root README) it runs automatically on first boot.
-
 create extension if not exists "pgcrypto"; -- for gen_random_uuid()
-
 create type user_role as enum ('fleet_manager', 'dispatcher', 'driver', 'safety_officer', 'financial_analyst');
 create type vehicle_status as enum ('available', 'on_trip', 'in_shop', 'retired');
 create type driver_status as enum ('available', 'on_trip', 'off_duty', 'suspended');
