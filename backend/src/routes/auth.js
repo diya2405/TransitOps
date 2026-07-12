@@ -39,26 +39,30 @@ async function createUser({ email, password, name, role }) {
   return rows[0];
 }
 
-router.get("/status", async (req, res) => {
-  const userCount = await getUserCount();
-  res.json({ registration_open: userCount === 0, user_count: userCount });
+router.get("/status", async (req, res, next) => {
+  try {
+    const userCount = await getUserCount();
+    res.json({ registration_open: userCount === 0, user_count: userCount });
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.post("/register", async (req, res) => {
-  const userCount = await getUserCount();
-  if (userCount > 0) {
-    return res.status(403).json({ error: "Registration is closed. Ask a Fleet Manager to create your account." });
-  }
-
-  const { email, password, name } = req.body;
-  if (!email || !password || !name) {
-    return res.status(400).json({ error: "name, email and password are required." });
-  }
-  if (String(password).length < 8) {
-    return res.status(400).json({ error: "Password must be at least 8 characters long." });
-  }
-
+router.post("/register", async (req, res, next) => {
   try {
+    const userCount = await getUserCount();
+    if (userCount > 0) {
+      return res.status(403).json({ error: "Registration is closed. Ask a Fleet Manager to create your account." });
+    }
+
+    const { email, password, name } = req.body;
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: "name, email and password are required." });
+    }
+    if (String(password).length < 8) {
+      return res.status(400).json({ error: "Password must be at least 8 characters long." });
+    }
+
     const user = await createUser({ email, password, name, role: "fleet_manager" });
     const profile = toProfile(user);
     const token = signProfile(profile);
@@ -67,24 +71,28 @@ router.post("/register", async (req, res) => {
     if (err?.code === "23505") {
       return res.status(409).json({ error: "That email is already registered." });
     }
-    throw err;
+    next(err);
   }
 });
 
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: "email and password are required." });
+router.post("/login", async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: "email and password are required." });
 
-  const { rows } = await pool.query("select * from users where email = $1", [normalizeEmail(email)]);
-  const user = rows[0];
-  if (!user) return res.status(401).json({ error: "Invalid email or password." });
+    const { rows } = await pool.query("select * from users where email = $1", [normalizeEmail(email)]);
+    const user = rows[0];
+    if (!user) return res.status(401).json({ error: "Invalid email or password." });
 
-  const valid = await bcrypt.compare(password, user.password_hash);
-  if (!valid) return res.status(401).json({ error: "Invalid email or password." });
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) return res.status(401).json({ error: "Invalid email or password." });
 
-  const profile = toProfile(user);
-  const token = signProfile(profile);
-  res.json({ token, profile });
+    const profile = toProfile(user);
+    const token = signProfile(profile);
+    res.json({ token, profile });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // GET /api/auth/me — used on app load to restore the session from a stored token
