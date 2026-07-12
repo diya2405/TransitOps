@@ -9,8 +9,8 @@ const PERMISSIONS = {
     "reports:view",
     "reports:export",
   ],
-  dispatcher: ["trips:create", "trips:dispatch", "trips:complete", "trips:cancel", "fuel:write", "expenses:write"],
-  driver: ["trips:create", "trips:dispatch", "trips:complete", "trips:cancel", "fuel:write"],
+  dispatcher: ["vehicles:write", "trips:create", "trips:dispatch", "trips:complete", "trips:cancel", "fuel:write", "expenses:write"],
+  driver: ["trips:complete", "fuel:write"],
   safety_officer: ["drivers:write", "reports:view"],
   financial_analyst: ["reports:view", "reports:export"],
 };
