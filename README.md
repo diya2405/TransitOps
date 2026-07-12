@@ -56,7 +56,7 @@ The app now includes a working end-to-end flow for the core roles:
 
 The table structure/ERD for login & registration is in this repo for reference (see Database Design). If any additional columns are needed on profiles or elsewhere, please inform the team before altering the schema so migrations stay in sync.
 
-This README will be updated as Phase 2 (Fleet Manager dashboard, Trips, Maintenance, Fuel & Expenses, Reports) gets allocated.
+This README has been updated to reflect Phase 2 implementation (Fleet Manager dashboard, Trips, Maintenance, Fuel & Expenses, Reports, and User Management). All core operational modules are fully integrated and functional.
 
 ## Getting Started (Local Setup)
 
@@ -322,4 +322,4 @@ VITE_API_URL=http://localhost:4000
 - Open a PR into main when your module is demo-ready
 - Keep DB schema changes communicated in the team chat before merging
 
-Last updated: Fleet Manager, Safety Officer, Financial Analyst, Driver Dashboard, dispatcher workflow, trip validation, maintenance flow, and role-based access controls.
+Last updated: Fleet Manager, Safety Officer, Financial Analyst, Driver Dashboard, dispatcher workflow, trip validation, maintenance flow, expenses, auth, and role-based access controls.
