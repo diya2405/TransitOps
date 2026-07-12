@@ -32,8 +32,8 @@ const PERMISSIONS: Record<UserRole, Action[]> = {
   ],
   dispatcher: ["trips:create", "trips:dispatch", "trips:complete", "trips:cancel", "fuel:write", "expenses:write"],
   driver: ["trips:create", "trips:dispatch", "trips:complete", "trips:cancel", "fuel:write"],
-  safety_officer: ["drivers:write", "trips:cancel", "reports:view"],
-  financial_analyst: ["expenses:write", "reports:view", "reports:export"],
+  safety_officer: ["drivers:write", "reports:view"],
+  financial_analyst: ["reports:view", "reports:export"],
 };
 
 export function can(role: UserRole | undefined, action: Action): boolean {

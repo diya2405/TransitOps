@@ -39,6 +39,20 @@ router.patch("/:id", requirePermission("drivers:write"), async (req, res) => {
     if (req.body[f] !== undefined) { values.push(req.body[f]); updates.push(`${f} = $${values.length}`); }
   }
   if (!updates.length) return res.status(400).json({ error: "No valid fields to update." });
+
+  if (req.body.status === "available") {
+    const { rows: currentRows } = await pool.query("select license_expiry_date from drivers where id = $1", [req.params.id]);
+    if (currentRows[0]) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expiryDate = new Date(currentRows[0].license_expiry_date);
+      expiryDate.setHours(0, 0, 0, 0);
+      if (expiryDate < today) {
+        return res.status(409).json({ error: "Cannot reactivate a driver with an expired license." });
+      }
+    }
+  }
+
   values.push(req.params.id);
   const { rows } = await pool.query(
     `update drivers set ${updates.join(", ")} where id = $${values.length} returning *`,
