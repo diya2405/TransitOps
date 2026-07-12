@@ -1,5 +1,9 @@
 node_modules
 dist
+.tsbuildinfo
+frontend/tsconfig.tsbuildinfo
+frontend/tsconfig.node.tsbuildinfo
+.vite
 .env
 .env.local
 *.local
