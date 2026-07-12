@@ -58,35 +58,6 @@ export default function FinancialAnalystDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Mock data fallbacks for populated state when database is empty
-  const mockFuelLogs = useMemo(() => [
-    { id: "m1", vehicle_id: "Tata Ace", liters: 50, cost: 5200, date: "2026-07-12" },
-    { id: "m2", vehicle_id: "Ashok Leyland", liters: 70, cost: 7200, date: "2026-07-11" },
-    { id: "m3", vehicle_id: "Mahindra Bolero", liters: 42, cost: 4300, date: "2026-07-10" },
-  ], []);
-
-  const mockExpenses = useMemo(() => [
-    { id: "e1", vehicle_id: "Tata Ace", type: "toll" as const, amount: 500, date: "2026-07-12", note: "NH48 Toll" },
-    { id: "e2", vehicle_id: "Ashok Leyland", type: "other" as const, amount: 1200, date: "2026-07-11", note: "Cleaning & Washing" },
-    { id: "e3", vehicle_id: "Mahindra Bolero", type: "maintenance" as const, amount: 8000, date: "2026-07-10", note: "Oil filter change" },
-  ], []);
-
-  const mockMonthlyExpenses = useMemo(() => [
-    { month: "Jan", amount: 12000 },
-    { month: "Feb", amount: 18000 },
-    { month: "Mar", amount: 15000 },
-    { month: "Apr", amount: 22000 },
-    { month: "May", amount: 17000 },
-    { month: "Jun", amount: 25000 },
-  ], []);
-
-  const mockExpenseDistribution = useMemo(() => [
-    { name: "Fuel", value: 62500 },
-    { name: "Maintenance", value: 38000 },
-    { name: "Toll", value: 15000 },
-    { name: "Other", value: 9500 },
-  ], []);
-
   async function refresh() {
     setLoading(true);
     setError(null);
@@ -133,14 +104,14 @@ export default function FinancialAnalystDashboard() {
   const stats = useMemo(() => {
     if (isDatabaseEmpty) {
       return {
-        totalExpense: 125000,
-        fuelCost: 62500,
-        maintenanceCost: 38000,
-        roi: "18.5%",
-        monthlyExpenses: mockMonthlyExpenses,
-        expenseDistribution: mockExpenseDistribution,
-        displayFuelLogs: mockFuelLogs,
-        displayExpenses: mockExpenses,
+        totalExpense: 0,
+        fuelCost: 0,
+        maintenanceCost: 0,
+        roi: "0%",
+        monthlyExpenses: [],
+        expenseDistribution: [{ name: "No Data", value: 1 }],
+        displayFuelLogs: [],
+        displayExpenses: [],
       };
     }
 
@@ -223,10 +194,6 @@ export default function FinancialAnalystDashboard() {
     expenses,
     maintenanceLogs,
     vehicleMap,
-    mockFuelLogs,
-    mockExpenses,
-    mockMonthlyExpenses,
-    mockExpenseDistribution,
   ]);
 
   return (

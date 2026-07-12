@@ -2,6 +2,7 @@
 import { Router } from "express";
 import { pool } from "../db.js";
 import { requireAuth, requirePermission } from "../middleware/auth.js";
+import { validateVehiclePayload } from "../lib/validation.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -26,6 +27,20 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", requirePermission("vehicles:write"), async (req, res) => {
   const { registration_number, name_model, type, max_load_capacity_kg, odometer_km, acquisition_cost, region } = req.body;
+  const { errors } = validateVehiclePayload({
+    registration_number,
+    name_model,
+    type,
+    max_load_capacity_kg,
+    odometer_km,
+    acquisition_cost,
+    region,
+  });
+
+  if (errors.length) {
+    return res.status(400).json({ error: errors[0] });
+  }
+
   try {
     const { rows } = await pool.query(
       `insert into vehicles (registration_number, name_model, type, max_load_capacity_kg, odometer_km, acquisition_cost, region)
@@ -48,6 +63,14 @@ router.patch("/:id", requirePermission("vehicles:write"), async (req, res) => {
     if (req.body[f] !== undefined) { values.push(req.body[f]); updates.push(`${f} = $${values.length}`); }
   }
   if (!updates.length) return res.status(400).json({ error: "No valid fields to update." });
+
+  const validationPayload = {};
+  for (const key of ["name_model", "type", "max_load_capacity_kg", "odometer_km", "acquisition_cost", "status", "region"]) {
+    if (req.body[key] !== undefined) validationPayload[key] = req.body[key];
+  }
+  const { errors } = validateVehiclePayload(validationPayload);
+  if (errors.length) return res.status(400).json({ error: errors[0] });
+
   values.push(req.params.id);
   const { rows } = await pool.query(
     `update vehicles set ${updates.join(", ")} where id = $${values.length} returning *`,

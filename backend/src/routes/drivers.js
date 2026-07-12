@@ -2,6 +2,7 @@
 import { Router } from "express";
 import { pool } from "../db.js";
 import { requireAuth, requirePermission } from "../middleware/auth.js";
+import { validateDriverPayload } from "../lib/validation.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -23,6 +24,16 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", requirePermission("drivers:write"), async (req, res) => {
   const { name, license_number, license_category, license_expiry_date, contact_number, safety_score } = req.body;
+  const { errors } = validateDriverPayload({
+    name,
+    license_number,
+    license_category,
+    license_expiry_date,
+    contact_number,
+    safety_score,
+  });
+  if (errors.length) return res.status(400).json({ error: errors[0] });
+
   const { rows } = await pool.query(
     `insert into drivers (name, license_number, license_category, license_expiry_date, contact_number, safety_score)
      values ($1,$2,$3,$4,$5,$6) returning *`,
@@ -39,6 +50,16 @@ router.patch("/:id", requirePermission("drivers:write"), async (req, res) => {
     if (req.body[f] !== undefined) { values.push(req.body[f]); updates.push(`${f} = $${values.length}`); }
   }
   if (!updates.length) return res.status(400).json({ error: "No valid fields to update." });
+
+  const { errors } = validateDriverPayload({
+    name: req.body.name,
+    license_number: req.body.license_number,
+    license_category: req.body.license_category,
+    license_expiry_date: req.body.license_expiry_date,
+    contact_number: req.body.contact_number,
+    safety_score: req.body.safety_score,
+  });
+  if (errors.length) return res.status(400).json({ error: errors[0] });
 
   if (req.body.status === "available") {
     const { rows: currentRows } = await pool.query("select license_expiry_date from drivers where id = $1", [req.params.id]);
