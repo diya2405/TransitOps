@@ -2,8 +2,6 @@
 
 A centralized platform to digitize vehicle, driver, dispatch, maintenance, and expense management for transport/logistics operations while enforcing business rules and providing operational insights.
 
-Hackathon Duration: 8 Hours
-
 ## Current Status
 
 The app now includes a working end-to-end flow for the core roles:
