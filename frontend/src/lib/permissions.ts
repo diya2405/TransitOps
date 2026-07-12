@@ -27,12 +27,13 @@ const PERMISSIONS: Record<UserRole, Action[]> = {
     "maintenance:write",
     "fuel:write",
     "expenses:write",
+    "trips:create",
     "reports:view",
     "reports:export",
   ],
   dispatcher: ["trips:create", "trips:dispatch", "trips:complete", "trips:cancel", "fuel:write", "expenses:write"],
   driver: ["trips:create", "trips:dispatch", "trips:complete", "trips:cancel", "fuel:write"],
-  safety_officer: ["drivers:write", "reports:view"],
+  safety_officer: ["drivers:write", "trips:cancel", "reports:view"],
   financial_analyst: ["reports:view", "reports:export"],
 };
 

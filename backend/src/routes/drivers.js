@@ -51,14 +51,11 @@ router.patch("/:id", requirePermission("drivers:write"), async (req, res) => {
   }
   if (!updates.length) return res.status(400).json({ error: "No valid fields to update." });
 
-  const { errors } = validateDriverPayload({
-    name: req.body.name,
-    license_number: req.body.license_number,
-    license_category: req.body.license_category,
-    license_expiry_date: req.body.license_expiry_date,
-    contact_number: req.body.contact_number,
-    safety_score: req.body.safety_score,
-  });
+  const validationPayload = {};
+  for (const key of ["name", "license_number", "license_category", "license_expiry_date", "contact_number", "safety_score"]) {
+    if (req.body[key] !== undefined) validationPayload[key] = req.body[key];
+  }
+  const { errors } = validateDriverPayload(validationPayload, { partial: true });
   if (errors.length) return res.status(400).json({ error: errors[0] });
 
   if (req.body.status === "available") {

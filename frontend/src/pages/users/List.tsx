@@ -46,6 +46,21 @@ export default function UsersPage() {
     }
   }
 
+  async function handleDelete(user: UserAccount) {
+    if (!allowed || user.id === profile?.id) return;
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await api.delete(`/api/users/${user.id}`);
+      setSuccess(`Removed ${user.name}.`);
+      const refreshed = await api.get("/api/users");
+      setUsers(refreshed);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete user.");
+    }
+  }
+
   if (!allowed) {
     return (
       <div className="p-6">
@@ -101,6 +116,7 @@ export default function UsersPage() {
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Role</th>
                 <th className="px-4 py-3 font-medium">Created</th>
+                <th className="px-4 py-3 font-medium">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
@@ -110,6 +126,13 @@ export default function UsersPage() {
                   <td className="px-4 py-3 text-slate-700">{user.email}</td>
                   <td className="px-4 py-3 text-slate-700">{user.role}</td>
                   <td className="px-4 py-3 text-slate-500">{new Date(user.created_at).toLocaleString()}</td>
+                  <td className="px-4 py-3">
+                    {user.id === profile?.id ? (
+                      <span className="text-xs text-slate-400">You</span>
+                    ) : (
+                      <button type="button" onClick={() => handleDelete(user)} className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700">Delete</button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

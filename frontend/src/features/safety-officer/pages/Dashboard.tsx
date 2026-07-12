@@ -251,13 +251,17 @@ export default function SafetyOfficerDashboard() {
                             Vehicle: {trip.registration_number ?? trip.vehicle_id} · Driver: {trip.driver_name ?? trip.driver_id}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => cancelTrip(trip)}
-                          className="rounded-full bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-700"
-                        >
-                          Cancel trip
-                        </button>
+                        {can(profile?.role, "trips:cancel") ? (
+                          <button
+                            type="button"
+                            onClick={() => cancelTrip(trip)}
+                            className="rounded-full bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-700"
+                          >
+                            Cancel trip
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-400">Read only</span>
+                        )}
                       </div>
                     </div>
                   ))

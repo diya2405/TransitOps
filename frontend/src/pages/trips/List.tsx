@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { api } from "@/lib/apiClient";
 import { can } from "@/lib/permissions";
 import { useAuth } from "@/context/AuthContext";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import type { Trip } from "@/types";
+import { isLicenseExpired } from "@/lib/businessRules";
+import type { Driver, Trip, Vehicle } from "@/types";
 
 type TripRow = Trip & {
   registration_number?: string;
@@ -20,9 +21,30 @@ function MetricCard({ label, value, hint }: { label: string; value: string; hint
   );
 }
 
+type TripFormState = {
+  source: string;
+  destination: string;
+  vehicle_id: string;
+  driver_id: string;
+  cargo_weight_kg: string;
+  planned_distance_km: string;
+};
+
+const emptyTripForm: TripFormState = {
+  source: "",
+  destination: "",
+  vehicle_id: "",
+  driver_id: "",
+  cargo_weight_kg: "",
+  planned_distance_km: "",
+};
+
 export default function TripList() {
   const { profile } = useAuth();
   const [trips, setTrips] = useState<TripRow[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [tripForm, setTripForm] = useState<TripFormState>(emptyTripForm);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,8 +53,16 @@ export default function TripList() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.get("/api/trips");
-      setTrips(data);
+      const [tripData, vehicleData, driverData] = await Promise.all([
+        api.get("/api/trips"),
+        api.get("/api/vehicles"),
+        api.get("/api/drivers"),
+      ]);
+      const eligibleVehicles = vehicleData.filter((vehicle: Vehicle) => vehicle.status === "available");
+      const eligibleDrivers = driverData.filter((driver: Driver) => driver.status === "available" && !isLicenseExpired(driver.license_expiry_date));
+      setVehicles(eligibleVehicles);
+      setDrivers(eligibleDrivers);
+      setTrips(tripData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load trips.");
     } finally {
@@ -52,6 +82,59 @@ export default function TripList() {
       cancelled: trips.filter((trip) => trip.status === "cancelled").length,
     };
   }, [trips]);
+
+  function handleTripFormChange(event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    const { name, value } = event.target;
+    setTripForm((current) => ({ ...current, [name]: value }));
+  }
+
+  async function createTrip(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!can(profile?.role, "trips:create")) return;
+    setMessage(null);
+    setError(null);
+    try {
+      await api.post("/api/trips", {
+        source: tripForm.source.trim(),
+        destination: tripForm.destination.trim(),
+        vehicle_id: tripForm.vehicle_id,
+        driver_id: tripForm.driver_id,
+        cargo_weight_kg: Number(tripForm.cargo_weight_kg),
+        planned_distance_km: Number(tripForm.planned_distance_km),
+      });
+      setMessage("Trip created successfully.");
+      setTripForm(emptyTripForm);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create trip.");
+    }
+  }
+
+  async function dispatchTrip(trip: TripRow) {
+    if (!can(profile?.role, "trips:dispatch")) return;
+    setMessage(null);
+    setError(null);
+    try {
+      await api.post(`/api/trips/${trip.id}/dispatch`);
+      setMessage(`Trip ${trip.source} → ${trip.destination} dispatched.`);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to dispatch trip.");
+    }
+  }
+
+  async function completeTrip(trip: TripRow) {
+    if (!can(profile?.role, "trips:complete")) return;
+    setMessage(null);
+    setError(null);
+    try {
+      await api.post(`/api/trips/${trip.id}/complete`, {});
+      setMessage(`Trip ${trip.source} → ${trip.destination} completed.`);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to complete trip.");
+    }
+  }
 
   async function cancelTrip(trip: TripRow) {
     if (!can(profile?.role, "trips:cancel")) return;
@@ -87,6 +170,53 @@ export default function TripList() {
         {error && <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
         {message && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div>}
 
+        {can(profile?.role, "trips:create") ? (
+          <form onSubmit={createTrip} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Create trip</h2>
+                <p className="text-sm text-slate-500">Plan a route and assign a vehicle and driver before dispatch.</p>
+              </div>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm text-emerald-700">Create access</span>
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block font-medium text-slate-700">Source</span>
+                <input name="source" value={tripForm.source} onChange={handleTripFormChange} className="w-full rounded-xl border border-slate-300 px-3 py-2" required />
+              </label>
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block font-medium text-slate-700">Destination</span>
+                <input name="destination" value={tripForm.destination} onChange={handleTripFormChange} className="w-full rounded-xl border border-slate-300 px-3 py-2" required />
+              </label>
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block font-medium text-slate-700">Vehicle</span>
+                <select name="vehicle_id" value={tripForm.vehicle_id} onChange={handleTripFormChange} className="w-full rounded-xl border border-slate-300 px-3 py-2" required>
+                  <option value="">Select vehicle</option>
+                  {vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.registration_number}</option>)}
+                </select>
+              </label>
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block font-medium text-slate-700">Driver</span>
+                <select name="driver_id" value={tripForm.driver_id} onChange={handleTripFormChange} className="w-full rounded-xl border border-slate-300 px-3 py-2" required>
+                  <option value="">Select driver</option>
+                  {drivers.map((driver) => <option key={driver.id} value={driver.id}>{driver.name}</option>)}
+                </select>
+              </label>
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block font-medium text-slate-700">Cargo weight (kg)</span>
+                <input name="cargo_weight_kg" type="number" min="0" step="1" value={tripForm.cargo_weight_kg} onChange={handleTripFormChange} className="w-full rounded-xl border border-slate-300 px-3 py-2" required />
+              </label>
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block font-medium text-slate-700">Planned distance (km)</span>
+                <input name="planned_distance_km" type="number" min="0" step="1" value={tripForm.planned_distance_km} onChange={handleTripFormChange} className="w-full rounded-xl border border-slate-300 px-3 py-2" required />
+              </label>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button type="submit" className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white">Save trip</button>
+            </div>
+          </form>
+        ) : null}
+
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-slate-500">
@@ -108,17 +238,20 @@ export default function TripList() {
                   <td className="px-4 py-4 text-slate-700">{Number(trip.cargo_weight_kg)} kg</td>
                   <td className="px-4 py-4"><StatusBadge status={trip.status} /></td>
                   <td className="px-4 py-4">
-                    {trip.status === "dispatched" && can(profile?.role, "trips:cancel") ? (
-                      <button
-                        type="button"
-                        onClick={() => cancelTrip(trip)}
-                        className="rounded-full bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-700"
-                      >
-                        Cancel
-                      </button>
-                    ) : (
-                      <span className="text-xs text-slate-400">Read only</span>
-                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {trip.status === "draft" && can(profile?.role, "trips:dispatch") ? (
+                        <button type="button" onClick={() => dispatchTrip(trip)} className="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-700">Dispatch</button>
+                      ) : null}
+                      {trip.status === "dispatched" && can(profile?.role, "trips:complete") ? (
+                        <button type="button" onClick={() => completeTrip(trip)} className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-700">Complete</button>
+                      ) : null}
+                      {(trip.status === "draft" || trip.status === "dispatched") && can(profile?.role, "trips:cancel") ? (
+                        <button type="button" onClick={() => cancelTrip(trip)} className="rounded-full bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-700">Cancel</button>
+                      ) : null}
+                      {!((trip.status === "draft" && can(profile?.role, "trips:dispatch")) || (trip.status === "dispatched" && can(profile?.role, "trips:complete")) || ((trip.status === "draft" || trip.status === "dispatched") && can(profile?.role, "trips:cancel"))) ? (
+                        <span className="text-xs text-slate-400">Read only</span>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -13,6 +13,15 @@ type DriverEditDraft = {
   contact_number: string;
 };
 
+type DriverCreateDraft = {
+  name: string;
+  license_number: string;
+  license_category: string;
+  license_expiry_date: string;
+  contact_number: string;
+  safety_score: string;
+};
+
 function daysUntil(date: string) {
   const target = new Date(date);
   if (Number.isNaN(target.getTime())) return Number.POSITIVE_INFINITY;
@@ -41,6 +50,15 @@ function buildDraft(driver: Driver): DriverEditDraft {
   };
 }
 
+const emptyCreateDraft: DriverCreateDraft = {
+  name: "",
+  license_number: "",
+  license_category: "",
+  license_expiry_date: "",
+  contact_number: "",
+  safety_score: "100",
+};
+
 export default function DriverList() {
   const { profile } = useAuth();
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -54,6 +72,7 @@ export default function DriverList() {
     safety_score: "",
     contact_number: "",
   });
+  const [createDraft, setCreateDraft] = useState<DriverCreateDraft>(emptyCreateDraft);
 
   const canManageDrivers = can(profile?.role, "drivers:write");
 
@@ -114,6 +133,33 @@ export default function DriverList() {
     setEditDraft((current) => ({ ...current, [name]: value }));
   }
 
+  function handleCreateChange(event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    const { name, value } = event.target;
+    setCreateDraft((current) => ({ ...current, [name]: value }));
+  }
+
+  async function saveCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!canManageDrivers) return;
+    setMessage(null);
+    setError(null);
+    try {
+      await api.post("/api/drivers", {
+        name: createDraft.name.trim(),
+        license_number: createDraft.license_number.trim(),
+        license_category: createDraft.license_category.trim() || null,
+        license_expiry_date: createDraft.license_expiry_date,
+        contact_number: createDraft.contact_number.trim() || null,
+        safety_score: Number(createDraft.safety_score),
+      });
+      setMessage("Driver profile created.");
+      setCreateDraft(emptyCreateDraft);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create driver.");
+    }
+  }
+
   async function saveEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!editingDriverId || !canManageDrivers) return;
@@ -134,13 +180,19 @@ export default function DriverList() {
     }
   }
 
-  function sendReminder(driver: Driver) {
+  async function sendReminder(driver: Driver) {
     if (!canManageDrivers) return;
-    const subject = encodeURIComponent(`Reminder: ${driver.name} license review`);
-    const body = encodeURIComponent(
-      `Hello,\n\nPlease review ${driver.name}'s driver record. License ${driver.license_number} expires on ${driver.license_expiry_date}.\n\nTransitOps Safety Desk`
-    );
-    window.location.href = `mailto:safety@transitops.local?subject=${subject}&body=${body}`;
+    const subject = `Reminder: ${driver.name} license review`;
+    const body = `Hello,\n\nPlease review ${driver.name}'s driver record. License ${driver.license_number} expires on ${driver.license_expiry_date}.\n\nTransitOps Safety Desk`;
+    const mailtoUrl = `mailto:safety@transitops.local?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    try {
+      await navigator.clipboard.writeText(`${subject}\n\n${body}`);
+    } catch {
+      // Ignore clipboard failures and continue with the mail draft.
+    }
+
+    window.open(mailtoUrl, "_blank", "noopener,noreferrer");
     setMessage(`Reminder draft prepared for ${driver.name}.`);
   }
 
@@ -164,6 +216,47 @@ export default function DriverList() {
 
         {error && <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
         {message && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div>}
+
+        {canManageDrivers ? (
+          <form onSubmit={saveCreate} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Register a driver</h2>
+                <p className="text-sm text-slate-500">Add a new driver profile and set the initial compliance details.</p>
+              </div>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm text-emerald-700">Write access</span>
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block font-medium text-slate-700">Name</span>
+                <input name="name" value={createDraft.name} onChange={handleCreateChange} className="w-full rounded-xl border border-slate-300 px-3 py-2" required />
+              </label>
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block font-medium text-slate-700">License number</span>
+                <input name="license_number" value={createDraft.license_number} onChange={handleCreateChange} className="w-full rounded-xl border border-slate-300 px-3 py-2" required />
+              </label>
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block font-medium text-slate-700">License category</span>
+                <input name="license_category" value={createDraft.license_category} onChange={handleCreateChange} className="w-full rounded-xl border border-slate-300 px-3 py-2" />
+              </label>
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block font-medium text-slate-700">Expiry date</span>
+                <input name="license_expiry_date" type="date" value={createDraft.license_expiry_date} onChange={handleCreateChange} className="w-full rounded-xl border border-slate-300 px-3 py-2" required />
+              </label>
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block font-medium text-slate-700">Contact number</span>
+                <input name="contact_number" value={createDraft.contact_number} onChange={handleCreateChange} className="w-full rounded-xl border border-slate-300 px-3 py-2" />
+              </label>
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block font-medium text-slate-700">Safety score</span>
+                <input name="safety_score" type="number" min="0" max="100" value={createDraft.safety_score} onChange={handleCreateChange} className="w-full rounded-xl border border-slate-300 px-3 py-2" required />
+              </label>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button type="submit" className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white">Create driver</button>
+            </div>
+          </form>
+        ) : null}
 
         {canManageDrivers && editingDriverId ? (
           <form onSubmit={saveEdit} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

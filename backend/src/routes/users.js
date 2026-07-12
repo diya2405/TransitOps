@@ -30,6 +30,19 @@ router.get("/", async (req, res) => {
   res.json(rows);
 });
 
+router.delete('/:id', async (req, res) => {
+  if (req.user?.id === req.params.id) {
+    return res.status(400).json({ error: "You cannot delete your own account." });
+  }
+
+  const { rows } = await pool.query('delete from users where id = $1 returning id, email, name, role', [req.params.id]);
+  if (!rows[0]) {
+    return res.status(404).json({ error: "User not found." });
+  }
+
+  res.json({ success: true, deletedUser: rows[0] });
+});
+
 router.post("/", async (req, res) => {
   const { email, password, name, role } = req.body;
   const allowedRoles = new Set(["fleet_manager", "dispatcher", "driver", "safety_officer", "financial_analyst"]);

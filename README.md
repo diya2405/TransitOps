@@ -4,6 +4,24 @@ A centralized platform to digitize vehicle, driver, dispatch, maintenance, and e
 
 Hackathon Duration: 8 Hours
 
+## Current Status
+
+The app now includes a working end-to-end flow for the core roles:
+- Fleet Manager: vehicle registry, maintenance, user management, fleet reporting
+- Safety Officer: driver compliance monitoring, suspension/reactivation, trip safety review
+- Financial Analyst: cost reporting, expense and fuel review, exportable reports
+- Dispatcher/Driver: trip creation, assignment, dispatch, completion, and cancellation with validation
+
+## Role Access Summary
+
+| Role | Pages available | What they can do |
+|---|---|---|
+| Fleet Manager | Dashboard, Vehicles, Drivers, Maintenance, Fuel & Expenses, Reports, User Management | Register/edit/retire vehicles, manage drivers, open/close maintenance, record fuel/expenses, view/export reports, create user accounts |
+| Dispatcher | Dashboard, Trips, Vehicles (view), Drivers (view), Fuel & Expenses | Create trips, dispatch, complete, cancel, record fuel and expenses |
+| Driver | Dashboard, Trips, Vehicles (view), Drivers (view), Fuel & Expenses | View assigned trip workflow and operational records |
+| Safety Officer | Dashboard, Drivers, Trips (cancel only), Reports | Monitor driver compliance, suspend/reactivate drivers, review trip safety actions |
+| Financial Analyst | Dashboard, Fuel & Expenses, Reports | Review fuel/maintenance/expense costs, run analytics, export reports |
+
 ## Table of Contents
 
 1. Tech Stack
@@ -28,8 +46,6 @@ Hackathon Duration: 8 Hours
 | Auth | Email + Password, session/JWT-based, custom RBAC |
 
 ## Team & Work Allocation
-
-### Phase 1
 
 | Member | Module |
 |---|---|
@@ -215,6 +231,7 @@ Every role lands on the same Dashboard shell and sees a role-specific nav bar. W
 - Cancelling a dispatched trip → restores vehicle & driver to Available.
 - Creating an active maintenance record → vehicle status → In Shop.
 - Closing maintenance → restores vehicle to Available unless retired.
+- Reports and dashboards refresh from live backend data.
 
 ## Example Workflow (Demo Script)
 
@@ -305,4 +322,4 @@ VITE_API_URL=http://localhost:4000
 - Open a PR into main when your module is demo-ready
 - Keep DB schema changes communicated in the team chat before merging
 
-Last updated: Auth, Dispatcher RBAC, Driver Dashboard, Financial Analyst, Safety Officer.
+Last updated: Fleet Manager, Safety Officer, Financial Analyst, dispatcher workflow, trip validation, maintenance flow, and role-based access controls.

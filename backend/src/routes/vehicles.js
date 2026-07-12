@@ -55,6 +55,14 @@ router.post("/", requirePermission("vehicles:write"), async (req, res) => {
   }
 });
 
+router.delete('/:id', requirePermission("vehicles:write"), async (req, res) => {
+  const { rows: currentRows } = await pool.query('select * from vehicles where id = $1', [req.params.id]);
+  if (!currentRows[0]) return res.status(404).json({ error: 'Vehicle not found.' });
+
+  const { rows } = await pool.query("update vehicles set status = 'retired' where id = $1 returning *", [req.params.id]);
+  res.json(rows[0]);
+});
+
 router.patch("/:id", requirePermission("vehicles:write"), async (req, res) => {
   const fields = ["name_model", "type", "max_load_capacity_kg", "odometer_km", "acquisition_cost", "status", "region"];
   const updates = [];
@@ -68,7 +76,7 @@ router.patch("/:id", requirePermission("vehicles:write"), async (req, res) => {
   for (const key of ["name_model", "type", "max_load_capacity_kg", "odometer_km", "acquisition_cost", "status", "region"]) {
     if (req.body[key] !== undefined) validationPayload[key] = req.body[key];
   }
-  const { errors } = validateVehiclePayload(validationPayload);
+  const { errors } = validateVehiclePayload(validationPayload, { partial: true });
   if (errors.length) return res.status(400).json({ error: errors[0] });
 
   values.push(req.params.id);

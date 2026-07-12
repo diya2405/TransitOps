@@ -197,7 +197,7 @@ export default function Reports() {
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {report.cards.map((card) => (
-            <div key={card.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div key={card.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
               <p className="text-sm text-slate-500">{card.label}</p>
               <p className="mt-2 text-3xl font-semibold text-slate-900">{card.value}</p>
               <p className="mt-2 text-sm text-slate-500">{card.hint}</p>

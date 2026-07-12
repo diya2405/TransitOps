@@ -28,6 +28,20 @@ router.get("/", async (req, res) => {
 
 router.post("/", requirePermission("trips:create"), async (req, res) => {
   const { source, destination, vehicle_id, driver_id, cargo_weight_kg, planned_distance_km } = req.body;
+  const { rows: vehicleRows } = await pool.query("select * from vehicles where id = $1", [vehicle_id]);
+  const { rows: driverRows } = await pool.query("select * from drivers where id = $1", [driver_id]);
+  const vehicle = vehicleRows[0];
+  const driver = driverRows[0];
+
+  if (!vehicle || !driver) {
+    return res.status(404).json({ error: "Vehicle or driver not found." });
+  }
+
+  const check = canDispatch(vehicle, driver, cargo_weight_kg);
+  if (!check.ok) {
+    return res.status(422).json({ error: "Trip validation failed.", reasons: check.reasons });
+  }
+
   const { rows } = await pool.query(
     `insert into trips (source, destination, vehicle_id, driver_id, cargo_weight_kg, planned_distance_km, created_by)
      values ($1,$2,$3,$4,$5,$6,$7) returning *`,

@@ -2,7 +2,7 @@ export function isLicenseExpired(licenseExpiryDate) {
   return new Date(licenseExpiryDate) < new Date();
 }
 
-export function canDispatch(vehicle, driver, cargoWeightKg) {
+export function validateTripAssignment(vehicle, driver, cargoWeightKg) {
   const reasons = [];
   if (vehicle.status !== "available") {
     reasons.push(`Vehicle is not available (status: ${vehicle.status}).`);
@@ -19,6 +19,10 @@ export function canDispatch(vehicle, driver, cargoWeightKg) {
     );
   }
   return { ok: reasons.length === 0, reasons };
+}
+
+export function canDispatch(vehicle, driver, cargoWeightKg) {
+  return validateTripAssignment(vehicle, driver, cargoWeightKg);
 }
 
 export const TRIP_TRANSITIONS = {

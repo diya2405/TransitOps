@@ -11,13 +11,22 @@ function isPastDate(value) {
   return parsed < today;
 }
 
-export function validateVehiclePayload(payload) {
+export function validateVehiclePayload(payload, options = {}) {
+  const { partial = false } = options;
   const errors = [];
-  if (!isNonEmptyString(payload?.registration_number)) errors.push("registration_number is required.");
-  if (!isNonEmptyString(payload?.name_model)) errors.push("name_model is required.");
-  if (!isNonEmptyString(payload?.type)) errors.push("type is required.");
-  if (payload?.max_load_capacity_kg === undefined || Number(payload.max_load_capacity_kg) <= 0) {
-    errors.push("max_load_capacity_kg must be a positive number.");
+  if (!partial || payload?.registration_number !== undefined) {
+    if (!isNonEmptyString(payload?.registration_number)) errors.push("registration_number is required.");
+  }
+  if (!partial || payload?.name_model !== undefined) {
+    if (!isNonEmptyString(payload?.name_model)) errors.push("name_model is required.");
+  }
+  if (!partial || payload?.type !== undefined) {
+    if (!isNonEmptyString(payload?.type)) errors.push("type is required.");
+  }
+  if (!partial || payload?.max_load_capacity_kg !== undefined) {
+    if (payload?.max_load_capacity_kg === undefined || Number(payload.max_load_capacity_kg) <= 0) {
+      errors.push("max_load_capacity_kg must be a positive number.");
+    }
   }
   if (payload?.odometer_km !== undefined && Number(payload.odometer_km) < 0) {
     errors.push("odometer_km cannot be negative.");
@@ -28,15 +37,24 @@ export function validateVehiclePayload(payload) {
   return { errors };
 }
 
-export function validateDriverPayload(payload) {
+export function validateDriverPayload(payload, options = {}) {
+  const { partial = false } = options;
   const errors = [];
-  if (!isNonEmptyString(payload?.name)) errors.push("name is required.");
-  if (!isNonEmptyString(payload?.license_number)) errors.push("license_number is required.");
-  if (!isNonEmptyString(payload?.license_category)) errors.push("license_category is required.");
-  if (!payload?.license_expiry_date) {
-    errors.push("license_expiry_date is required.");
-  } else if (isPastDate(payload.license_expiry_date)) {
-    errors.push("license_expiry_date cannot be in the past.");
+  if (!partial || payload?.name !== undefined) {
+    if (!isNonEmptyString(payload?.name)) errors.push("name is required.");
+  }
+  if (!partial || payload?.license_number !== undefined) {
+    if (!isNonEmptyString(payload?.license_number)) errors.push("license_number is required.");
+  }
+  if (!partial || payload?.license_category !== undefined) {
+    if (!isNonEmptyString(payload?.license_category)) errors.push("license_category is required.");
+  }
+  if (!partial || payload?.license_expiry_date !== undefined) {
+    if (!payload?.license_expiry_date) {
+      errors.push("license_expiry_date is required.");
+    } else if (isPastDate(payload.license_expiry_date)) {
+      errors.push("license_expiry_date cannot be in the past.");
+    }
   }
   if (payload?.safety_score !== undefined && (Number(payload.safety_score) < 0 || Number(payload.safety_score) > 100)) {
     errors.push("safety_score must be between 0 and 100.");
