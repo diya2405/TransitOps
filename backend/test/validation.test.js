@@ -6,7 +6,7 @@ test('vehicle validation accepts a complete payload', () => {
   const result = validateVehiclePayload({
     registration_number: 'GJ-01-XX-9999',
     name_model: 'Tata Ace',
-    type: 'Van',
+    type: 'Car',
     max_load_capacity_kg: 600,
     odometer_km: 1000,
     acquisition_cost: 700000,
@@ -20,7 +20,7 @@ test('driver validation rejects expired or invalid license data', () => {
   const result = validateDriverPayload({
     name: 'Asha',
     license_number: 'DL-100',
-    license_category: 'LMV',
+    license_category: 'Truck',
     license_expiry_date: '2020-01-01',
     safety_score: 120,
   });
