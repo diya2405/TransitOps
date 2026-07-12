@@ -322,4 +322,4 @@ VITE_API_URL=http://localhost:4000
 - Open a PR into main when your module is demo-ready
 - Keep DB schema changes communicated in the team chat before merging
 
-Last updated: Fleet Manager, Safety Officer, Financial Analyst, dispatcher workflow, trip validation, maintenance flow, and role-based access controls.
+Last updated: Fleet Manager, Safety Officer, Financial Analyst, Driver Dashboard, dispatcher workflow, trip validation, maintenance flow, and role-based access controls.

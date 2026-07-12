@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
+import DriverDashboard from "@/features/driver/pages/Dashboard";
 import SafetyOfficerDashboard from "@/features/safety-officer/pages/Dashboard";
 import FinancialAnalystDashboard from "@/features/financial-analyst/pages/Dashboard";
 import type { Expense, Vehicle } from "@/types";
@@ -155,7 +156,8 @@ export default function Dashboard() {
   const { profile } = useAuth();
 
   if (profile?.role === "safety_officer") return <SafetyOfficerDashboard />;
-  if (profile?.role === "dispatcher" || profile?.role === "driver") return <DispatcherDashboard />;
+  if (profile?.role === "dispatcher") return <DispatcherDashboard />;
+  if (profile?.role === "driver") return <DriverDashboard />;
   if (profile?.role === "financial_analyst") return <FinancialAnalystDashboard />;
   return <FleetManagerDashboard />;
 }

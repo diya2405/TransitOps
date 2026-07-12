@@ -11,6 +11,11 @@ type TripRow = Trip & {
   driver_name?: string;
 };
 
+type TripCompletionDraft = {
+  final_odometer_km: string;
+  fuel_consumed_l: string;
+};
+
 function MetricCard({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -48,6 +53,8 @@ export default function TripList() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [completingTripId, setCompletingTripId] = useState<string | null>(null);
+  const [completionDraft, setCompletionDraft] = useState<TripCompletionDraft>({ final_odometer_km: "", fuel_consumed_l: "" });
 
   async function refresh() {
     setLoading(true);
@@ -123,18 +130,38 @@ export default function TripList() {
     }
   }
 
-  async function completeTrip(trip: TripRow) {
+  function startCompletion(trip: TripRow) {
     if (!can(profile?.role, "trips:complete")) return;
     setMessage(null);
     setError(null);
+    setCompletingTripId(trip.id);
+    setCompletionDraft({ final_odometer_km: "", fuel_consumed_l: "" });
+  }
+
+  function handleCompletionChange(event: ChangeEvent<HTMLInputElement>) {
+    const { name, value } = event.target;
+    setCompletionDraft((current) => ({ ...current, [name]: value }));
+  }
+
+  async function submitCompletion(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!completingTripId || !can(profile?.role, "trips:complete")) return;
+    setMessage(null);
+    setError(null);
     try {
-      await api.post(`/api/trips/${trip.id}/complete`, {});
-      setMessage(`Trip ${trip.source} → ${trip.destination} completed.`);
+      await api.post(`/api/trips/${completingTripId}/complete`, {
+        final_odometer_km: Number(completionDraft.final_odometer_km),
+        fuel_consumed_l: Number(completionDraft.fuel_consumed_l),
+      });
+      setMessage("Trip marked as completed.");
+      setCompletingTripId(null);
       await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to complete trip.");
     }
   }
+
+  const completingTrip = completingTripId ? trips.find((trip) => trip.id === completingTripId) ?? null : null;
 
   async function cancelTrip(trip: TripRow) {
     if (!can(profile?.role, "trips:cancel")) return;
@@ -166,6 +193,31 @@ export default function TripList() {
           <MetricCard label="Completed" value={String(metrics.completed)} hint="Trips successfully finished." />
           <MetricCard label="Cancelled" value={String(metrics.cancelled)} hint="Trips cancelled for safety or operational reasons." />
         </section>
+
+        {completingTrip && can(profile?.role, "trips:complete") ? (
+          <form onSubmit={submitCompletion} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Complete trip</h2>
+                <p className="text-sm text-slate-500">{completingTrip.source} → {completingTrip.destination}</p>
+              </div>
+              <button type="button" onClick={() => setCompletingTripId(null)} className="rounded-full border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:border-slate-900">Cancel</button>
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block font-medium text-slate-700">Final odometer</span>
+                <input name="final_odometer_km" type="number" min="0" step="0.1" value={completionDraft.final_odometer_km} onChange={handleCompletionChange} className="w-full rounded-xl border border-slate-300 px-3 py-2" required />
+              </label>
+              <label className="text-sm text-slate-600">
+                <span className="mb-1 block font-medium text-slate-700">Fuel consumed (L)</span>
+                <input name="fuel_consumed_l" type="number" min="0" step="0.1" value={completionDraft.fuel_consumed_l} onChange={handleCompletionChange} className="w-full rounded-xl border border-slate-300 px-3 py-2" required />
+              </label>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button type="submit" className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white">Mark complete</button>
+            </div>
+          </form>
+        ) : null}
 
         {error && <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
         {message && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div>}
@@ -243,7 +295,7 @@ export default function TripList() {
                         <button type="button" onClick={() => dispatchTrip(trip)} className="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-700">Dispatch</button>
                       ) : null}
                       {trip.status === "dispatched" && can(profile?.role, "trips:complete") ? (
-                        <button type="button" onClick={() => completeTrip(trip)} className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-700">Complete</button>
+                        <button type="button" onClick={() => startCompletion(trip)} className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-slate-700">Complete</button>
                       ) : null}
                       {(trip.status === "draft" || trip.status === "dispatched") && can(profile?.role, "trips:cancel") ? (
                         <button type="button" onClick={() => cancelTrip(trip)} className="rounded-full bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-700">Cancel</button>
