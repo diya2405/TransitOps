@@ -1,0 +1,157 @@
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from "recharts";
+.dashboard {
+    padding: 30px;
+    background: #f5f7fb;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+}
+
+
+.dashboard h1 {
+    margin-bottom: 25px;
+    color: #1f2937;
+}
+
+
+.card-container {
+
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap:20px;
+
+}
+
+
+.card {
+
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+
+}
+
+
+.card h3 {
+
+    color:#6b7280;
+    font-size:16px;
+
+}
+
+
+.card p {
+
+    font-size:28px;
+    font-weight:bold;
+    color:#2563eb;
+
+}
+
+
+
+.section {
+
+    background:white;
+    margin-top:25px;
+    padding:25px;
+    border-radius:15px;
+
+}
+
+
+
+.chart-box {
+
+    height:150px;
+    padding:30px;
+    background:#eef2ff;
+    border-radius:10px;
+
+}
+
+
+
+.expense-list p {
+
+    display:inline-block;
+    margin-right:30px;
+    font-weight:bold;
+
+}
+
+
+
+table {
+
+    width:100%;
+    border-collapse:collapse;
+
+}
+
+
+
+th {
+
+    background:#2563eb;
+    color:white;
+    padding:12px;
+
+}
+
+
+
+td {
+
+    padding:12px;
+    border-bottom:1px solid #ddd;
+
+}
+
+
+
+tr:hover {
+
+    background:#f1f5f9;
+
+}
+
+
+
+@media(max-width:900px){
+
+.card-container{
+
+grid-template-columns:repeat(2,1fr);
+
+}
+
+}
+
+
+
+@media(max-width:500px){
+
+.card-container{
+
+grid-template-columns:1fr;
+
+}
+
+}
+.chart-container{
+    width:100%;
+    height:300px;
+    margin-top:20px;
+}
