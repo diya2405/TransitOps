@@ -1,0 +1,19 @@
+const PERMISSIONS = {
+  fleet_manager: [
+    "users:write",
+    "vehicles:write",
+    "drivers:write",
+    "maintenance:write",
+    "fuel:write",
+    "expenses:write",
+    "reports:view",
+  ],
+  dispatcher: ["trips:create", "trips:dispatch", "trips:complete", "trips:cancel", "fuel:write", "expenses:write"],
+  driver: ["trips:create", "trips:dispatch", "trips:complete", "trips:cancel", "fuel:write"],
+  safety_officer: ["drivers:write", "trips:cancel", "reports:view"],
+  financial_analyst: ["expenses:write", "reports:view"],
+};
+
+export function can(role, action) {
+  return PERMISSIONS[role]?.includes(action) ?? false;
+}
