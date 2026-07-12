@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 import SafetyOfficerDashboard from "@/features/safety-officer/pages/Dashboard";
+import FinancialAnalystDashboard from "@/features/financial-analyst/pages/Dashboard";
 import type { Expense, Vehicle } from "@/types";
 
 type DashboardKpis = {
@@ -149,84 +150,6 @@ function DispatcherDashboard() {
   );
 }
 
-function FinancialAnalystDashboard() {
-  const [kpis, setKpis] = useState<DashboardKpis | null>(null);
-  const [costRows, setCostRows] = useState<Array<{ id: string; registration_number: string; fuel_cost: number; maintenance_cost: number; operational_cost: number }>>([]);
-
-  useEffect(() => {
-    Promise.all([api.get("/api/dashboard/kpis"), api.get("/api/dashboard/reports/operational-cost")])
-      .then(([kpiData, costData]) => {
-        setKpis(kpiData);
-        setCostRows(costData);
-      })
-      .catch(() => {
-        setKpis(null);
-        setCostRows([]);
-      });
-  }, []);
-
-  const totalOperationalCost = costRows.reduce((sum, row) => sum + Number(row.operational_cost ?? 0), 0);
-
-  return (
-    <div className="min-h-[calc(100vh-57px)] bg-slate-50 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <section className="rounded-3xl border border-slate-200 bg-slate-900 p-8 text-white shadow-lg">
-          <p className="text-sm uppercase tracking-[0.3em] text-slate-300">TransitOps</p>
-          <h1 className="mt-3 text-3xl font-semibold sm:text-4xl">Financial Analyst Dashboard</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-            Track operational costs, fuel spend, and maintenance spend from a finance-first view.
-          </p>
-        </section>
-
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Vehicles with cost data" value={String(costRows.length)} hint="Vehicles contributing to spend." />
-          <MetricCard label="Total operational cost" value={totalOperationalCost.toFixed(2)} hint="Fuel + maintenance." />
-          <MetricCard label="Pending trips" value={String(kpis?.pending_trips ?? 0)} hint="Useful for expense forecasting." />
-          <MetricCard label="Fleet utilization" value={`${kpis?.fleet_utilization_pct ?? 0}%`} hint="Operational efficiency signal." />
-        </section>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">Operational cost by vehicle</h2>
-              <p className="text-sm text-slate-500">Use this for reports, export, and ROI analysis.</p>
-            </div>
-            <Link to="/reports" className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
-              Open Reports
-            </Link>
-          </div>
-
-          <div className="mt-5 overflow-hidden rounded-xl border border-slate-200">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-slate-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Vehicle</th>
-                  <th className="px-4 py-3 font-medium">Fuel</th>
-                  <th className="px-4 py-3 font-medium">Maintenance</th>
-                  <th className="px-4 py-3 font-medium">Operational cost</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 bg-white">
-                {costRows.map((row) => (
-                  <tr key={row.id}>
-                    <td className="px-4 py-3 font-medium text-slate-900">{row.registration_number}</td>
-                    <td className="px-4 py-3 text-slate-700">{Number(row.fuel_cost).toFixed(2)}</td>
-                    <td className="px-4 py-3 text-slate-700">{Number(row.maintenance_cost).toFixed(2)}</td>
-                    <td className="px-4 py-3 text-slate-700">{Number(row.operational_cost).toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            Export CSV/PDF from the Reports page once you want the finance output in a shareable format.
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function Dashboard() {
   const { profile } = useAuth();
